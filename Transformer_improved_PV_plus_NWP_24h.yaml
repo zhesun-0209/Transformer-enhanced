@@ -66,16 +66,8 @@ model_params:
 epoch_params:
   low:
     epochs: 50  # 增加训练轮数
-    tree_params:
-      n_estimators: 50
-      max_depth: 5
-      learning_rate: 0.1
   high:
     epochs: 80  # 增加训练轮数
-    tree_params:
-      n_estimators: 200
-      max_depth: 12
-      learning_rate: 0.01
 
 # 实验配置
 experiment_name: "Improved_Transformer_PV_NWP"

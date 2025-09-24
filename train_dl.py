@@ -110,8 +110,14 @@ def train_dl_model(
     
     # 根据模型复杂度获取epoch数 - 增加训练轮数以解决周期性问题
     complexity = config.get('model_complexity', 'low')
-    epoch_params = config.get('epoch_params', {'low': 50, 'high': 80})  # 增加epochs
-    epochs = epoch_params.get(complexity, 50)
+    epoch_params = config.get('epoch_params', {})
+    
+    # 处理嵌套的epoch_params结构
+    if complexity in epoch_params and 'epochs' in epoch_params[complexity]:
+        epochs = epoch_params[complexity]['epochs']
+    else:
+        # 默认epoch数
+        epochs = 50
 
     mse_fn = torch.nn.MSELoss()
     logs = []

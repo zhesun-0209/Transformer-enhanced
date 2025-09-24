@@ -29,39 +29,29 @@ model_complexity: low
 epoch_params:
   low:
     epochs: 15
-    tree_params:
-      n_estimators: 50
-      max_depth: 5
-      learning_rate: 0.1
-    dl_params: &id001
-      d_model: 64
-      num_heads: 4
-      num_layers: 6
-      hidden_dim: 32
-      dropout: 0.1
-      tcn_channels:
-      - 64
-      - 64
-      - 32
-      kernel_size: 3
   high:
     epochs: 50
-    tree_params:
-      n_estimators: 200
-      max_depth: 12
-      learning_rate: 0.01
-    dl_params: &id002
-      d_model: 256
-      num_heads: 16
-      num_layers: 18
-      hidden_dim: 128
-      dropout: 0.3
-      tcn_channels:
-      - 128
-      - 128
-      - 64
-      - 32
-      kernel_size: 3
 model_params:
-  low: *id001
-  high: *id002
+  low:
+    d_model: 64
+    num_heads: 4
+    num_layers: 6
+    hidden_dim: 32
+    dropout: 0.1
+    tcn_channels:
+    - 64
+    - 64
+    - 32
+    kernel_size: 3
+  high:
+    d_model: 256
+    num_heads: 16
+    num_layers: 18
+    hidden_dim: 128
+    dropout: 0.3
+    tcn_channels:
+    - 128
+    - 128
+    - 64
+    - 32
+    kernel_size: 3

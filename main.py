@@ -146,14 +146,8 @@ def main():
             dl_params = config["model_params"].get(complexity, config["model_params"]["low"])
         config["model_params"] = dl_params
     else:
-        # 机器学习模型参数
-        if complexity.startswith("level"):
-            # 四档复杂度：ml_level1, ml_level2, ml_level3, ml_level4
-            ml_params = config["model_params"].get(f"ml_{complexity}", config["model_params"]["ml_level2"])
-        else:
-            # 兼容旧的两档复杂度：ml_low, ml_high
-            ml_params = config["model_params"].get(f"ml_{complexity}", config["model_params"]["ml_low"])
-        config["model_params"] = ml_params
+        # 机器学习模型参数 - 简化处理
+        config["model_params"] = config["model_params"].get(complexity, config["model_params"]["low"])
     
     # 仍然允许CLI覆盖
     mp = config["model_params"]
