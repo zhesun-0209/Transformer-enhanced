@@ -285,6 +285,8 @@ def main():
         # Step 4: Train model
         print(f"🔍 调试: 准备开始训练，模型类型: {'DL' if is_dl else 'ML'}")
         print(f"🔍 调试: cfg['model'] = {cfg.get('model', 'NOT_FOUND')}")
+        print(f"🔍 调试: is_dl = {is_dl}")
+        print(f"🔍 调试: cfg['model'] in DL列表 = {cfg.get('model', 'NOT_FOUND') in ['Transformer', 'ImprovedTransformer', 'HybridTransformer', 'LSTM', 'GRU', 'TCN']}")
         print(f"🔍 调试: cfg['train_params'] = {cfg.get('train_params', 'NOT_FOUND')}")
         print(f"🔍 调试: cfg['model_params'] = {cfg.get('model_params', 'NOT_FOUND')}")
         
@@ -300,15 +302,11 @@ def main():
                     (scaler_hist, scaler_fcst, scaler_target)
                 )
             else:
-                # 机器学习模型暂不支持，使用深度学习模型
-                print(f"⚠️  警告: 模型类型 {cfg['model']} 暂不支持，使用深度学习训练")
-                model, metrics = train_dl_model(
-                    cfg,
-                    (Xh_tr, Xf_tr, y_tr, hrs_tr, dates_tr),
-                    (Xh_va, Xf_va, y_va, hrs_va, dates_va),
-                    (Xh_te, Xf_te, y_te, hrs_te, dates_te),
-                    (scaler_hist, scaler_fcst, scaler_target)
-                )
+                # 这种情况不应该发生，因为所有支持的模型都是DL模型
+                print(f"❌ 错误: 不支持的模型类型 {cfg['model']}")
+                print(f"🔍 调试: is_dl = {is_dl}")
+                print(f"🔍 调试: 支持的模型列表: ['Transformer', 'ImprovedTransformer', 'HybridTransformer', 'LSTM', 'GRU', 'TCN']")
+                raise ValueError(f"不支持的模型类型: {cfg['model']}")
             metrics["train_time_sec"] = round(time.time() - start, 2)
         except Exception as e:
             print(f"[ERROR] Training failed for Project {pid}: {str(e)}")
