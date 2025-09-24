@@ -134,7 +134,7 @@ def main():
     # === Override model-specific parameters ===
     # 根据模型复杂度选择参数
     complexity = config.get("model_complexity", "low")
-    is_dl = config["model"] in ["Transformer", "LSTM", "GRU", "TCN"]
+    is_dl = config["model"] in ["Transformer", "ImprovedTransformer", "HybridTransformer", "LSTM", "GRU", "TCN"]
     
     if is_dl:
         # 深度学习模型参数
@@ -242,7 +242,7 @@ def main():
             f"comp{model_complexity}"
         )
 
-    is_dl = config["model"] in ["Transformer", "LSTM", "GRU", "TCN"]
+    is_dl = config["model"] in ["Transformer", "ImprovedTransformer", "HybridTransformer", "LSTM", "GRU", "TCN"]
     alg_type = "dl" if is_dl else "ml"
 
     # === Train for each project independently ===
@@ -300,12 +300,14 @@ def main():
                     (scaler_hist, scaler_fcst, scaler_target)
                 )
             else:
-                model, metrics = train_ml_model(
+                # 机器学习模型暂不支持，使用深度学习模型
+                print(f"⚠️  警告: 模型类型 {cfg['model']} 暂不支持，使用深度学习训练")
+                model, metrics = train_dl_model(
                     cfg,
-                    Xh_tr, Xf_tr, y_tr,
-                    Xh_te, Xf_te, y_te,
-                    dates_te,            
-                    scaler_target
+                    (Xh_tr, Xf_tr, y_tr, hrs_tr, dates_tr),
+                    (Xh_va, Xf_va, y_va, hrs_va, dates_va),
+                    (Xh_te, Xf_te, y_te, hrs_te, dates_te),
+                    (scaler_hist, scaler_fcst, scaler_target)
                 )
             metrics["train_time_sec"] = round(time.time() - start, 2)
         except Exception as e:
