@@ -8,7 +8,7 @@ import os
 import pandas as pd
 import numpy as np
 # 绘图功能已移除，默认不保存图片
-from eval.excel_utils import save_plant_excel_results
+from excel_utils import save_plant_excel_results
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 
 # ===== Define Deep Learning model names =====
@@ -170,7 +170,7 @@ def save_results(
         }
         
         # 保存到CSV文件（追加模式）
-        from eval.excel_utils import append_plant_excel_results
+        from excel_utils import append_plant_excel_results
         print(f"🔍 调试: plant_id={config.get('plant_id', 'unknown')}, save_dir={save_dir}")
         csv_file = append_plant_excel_results(
             plant_id=config.get('plant_id', 'unknown'),

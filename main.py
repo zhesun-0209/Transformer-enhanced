@@ -18,15 +18,14 @@ import yaml
 import numpy as np
 from copy import deepcopy
 
-from data.data_utils import (
+from data_utils import (
     load_raw_data,
     preprocess_features,
     create_sliding_windows,
     split_data
 )
-from train.train_dl import train_dl_model
-from train.train_ml import train_ml_model
-from eval.eval_utils import save_results, save_season_hour_results
+from train_dl import train_dl_model
+from eval_utils import save_results, save_season_hour_results
 
 def str2bool(v: str) -> bool:
     return v.lower() in ("true", "1", "yes")

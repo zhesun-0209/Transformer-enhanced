@@ -37,7 +37,7 @@ def get_weather_features_by_category(weather_category):
     根据天气特征类别返回天气特征
     
     Args:
-        weather_category: 'none', 'all_weather', 'solar_irradiance_only', 'high_weather', 'medium_weather', 'low_weather'
+        weather_category: 'none', 'all_weather', 'solar_irradiance_only', 'high_weather', 'medium_weather', 'low_weather', 'ablation_11_features'
     
     Returns:
         list: 选中的天气特征列表
@@ -54,6 +54,8 @@ def get_weather_features_by_category(weather_category):
         return MEDIUM_WEATHER_FEATURES
     elif weather_category == 'low_weather':
         return LOW_WEATHER_FEATURES
+    elif weather_category == 'ablation_11_features':
+        return ALL_WEATHER_FEATURES  # 使用全部天气特征
     else:
         raise ValueError(f"Invalid weather_category: {weather_category}")
 
