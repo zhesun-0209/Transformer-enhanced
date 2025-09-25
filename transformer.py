@@ -74,14 +74,30 @@ class Transformer(nn.Module):
             f = self.pos_enc(f)
             f_enc = self.encoder(f)           # (B, future_hours, d_model)
             
-            # 使用历史编码的最后部分和预测编码
-            combined = torch.cat([h_enc, f_enc], dim=1)
+            # 改进：使用历史编码的最后部分和预测编码的最后部分
+            # 这样既利用了历史信息，也利用了预测信息
+            hist_last = h_enc[:, -1, :]       # (B, d_model) - 历史最后时间步
+            fcst_last = f_enc[:, -1, :]       # (B, d_model) - 预测最后时间步
+            combined = torch.cat([hist_last, fcst_last], dim=-1)  # (B, 2*d_model)
         else:
-            combined = h_enc
+            # 只有历史信息时，使用最后时间步
+            combined = h_enc[:, -1, :]        # (B, d_model)
 
-        # 使用最后的时间步进行预测
-        last_timestep = combined[:, -1, :]  # (B, d_model)
-        result = self.head(last_timestep)   # (B, future_hours)
+        # 调整输出头以适应不同的输入维度
+        if self.cfg.get('use_forecast', False) and fcst is not None and self.fcst_proj is not None:
+            # 有预测信息时，输入维度是2*d_model
+            if not hasattr(self, 'head_with_forecast'):
+                self.head_with_forecast = nn.Sequential(
+                    nn.Linear(2 * self.cfg['d_model'], self.cfg['hidden_dim']),
+                    nn.ReLU(),
+                    nn.Dropout(self.cfg['dropout']),
+                    nn.Linear(self.cfg['hidden_dim'], self.cfg['future_hours']),
+                    nn.Sigmoid()
+                )
+            result = self.head_with_forecast(combined)  # (B, future_hours)
+        else:
+            # 没有预测信息时，使用原始输出头
+            result = self.head(combined)      # (B, future_hours)
         
         return result * 100  # 乘以100转换为百分比
 
