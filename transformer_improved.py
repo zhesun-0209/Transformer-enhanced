@@ -233,20 +233,25 @@ class HybridTransformer(nn.Module):
         batch_size = hist.size(0)
         future_queries = self.future_embedding.unsqueeze(0).expand(batch_size, -1, -1)  # (B, future_hours, d_model)
         
-        # 如果有预测数据，将其作为键值对
+        # 准备Key-Value信息
         if self.cfg.get('use_forecast', False) and fcst is not None and self.fcst_proj is not None:
+            # 编码预测天气数据
             f = self.fcst_proj(fcst)          # (B, future_hours, d_model)
             f = self.pos_enc(f)
             f_enc = self.encoder(f)           # (B, future_hours, d_model)
             
-            # 使用预测数据作为键值对
-            tgt = f_enc
+            # 将历史信息和预测天气都作为Key-Value
+            # 这样未来查询可以同时关注历史模式和预测天气
+            kv = torch.cat([memory, f_enc], dim=1)  # (B, past_hours + future_hours, d_model)
         else:
-            # 使用历史编码作为键值对
-            tgt = memory
+            # 只有历史信息作为Key-Value
+            kv = memory  # (B, past_hours, d_model)
 
         # 解码器处理
-        decoded = self.decoder(future_queries, tgt)  # (B, future_hours, d_model)
+        # 注意：TransformerDecoder的正确参数顺序是 (tgt, memory)
+        # tgt: 目标序列 (Query) - future_queries
+        # memory: 编码器输出 (Key-Value) - 历史信息 + 预测天气
+        decoded = self.decoder(future_queries, kv)  # (B, future_hours, d_model)
 
         # 输出预测
         result = self.output_head(decoded).squeeze(-1)  # (B, future_hours)
