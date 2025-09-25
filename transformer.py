@@ -94,6 +94,9 @@ class Transformer(nn.Module):
                     nn.Linear(self.cfg['hidden_dim'], self.cfg['future_hours']),
                     nn.Sigmoid()
                 )
+                # 确保新创建的层在正确的设备上
+                if hasattr(self, 'head_with_forecast'):
+                    self.head_with_forecast = self.head_with_forecast.to(combined.device)
             result = self.head_with_forecast(combined)  # (B, future_hours)
         else:
             # 没有预测信息时，使用原始输出头

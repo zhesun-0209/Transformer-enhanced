@@ -192,6 +192,9 @@ class ImprovedTransformer(nn.Module):
                     nn.Linear(self.cfg['hidden_dim'], self.cfg['future_hours']),
                     nn.Sigmoid()
                 )
+                # 确保新创建的层在正确的设备上
+                if hasattr(self, 'output_head_with_forecast'):
+                    self.output_head_with_forecast = self.output_head_with_forecast.to(global_repr.device)
             result = self.output_head_with_forecast(global_repr)  # (B, future_hours)
         else:
             # 没有预测信息时，使用原始输出头
