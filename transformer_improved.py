@@ -137,69 +137,35 @@ class ImprovedTransformer(nn.Module):
             f = self.pos_enc(f)
             f_enc = self.encoder(f)           # (B, future_hours, d_model)
             
-            # 改进：分别对历史和预测进行池化，然后融合
-            # 这样既利用了历史信息，也利用了预测信息
-            if self.pooling_type == 'last':
-                hist_repr = h_enc[:, -1, :]       # (B, d_model) - 历史最后时间步
-                fcst_repr = f_enc[:, -1, :]       # (B, d_model) - 预测最后时间步
-            elif self.pooling_type == 'mean':
-                hist_repr = torch.mean(h_enc, dim=1)  # (B, d_model) - 历史平均
-                fcst_repr = torch.mean(f_enc, dim=1)  # (B, d_model) - 预测平均
-            elif self.pooling_type == 'max':
-                hist_repr = torch.max(h_enc, dim=1)[0]  # (B, d_model) - 历史最大
-                fcst_repr = torch.max(f_enc, dim=1)[0]  # (B, d_model) - 预测最大
-            elif self.pooling_type == 'attention':
-                hist_repr = self.attention_pool(h_enc)  # (B, d_model) - 历史注意力池化
-                fcst_repr = self.attention_pool(f_enc)  # (B, d_model) - 预测注意力池化
-            elif self.pooling_type == 'learned_attention':
-                hist_weights = self.learned_attention(h_enc)  # (B, past_hours, 1)
-                hist_weights = F.softmax(hist_weights, dim=1)
-                hist_repr = torch.sum(h_enc * hist_weights, dim=1)  # (B, d_model)
-                
-                fcst_weights = self.learned_attention(f_enc)  # (B, future_hours, 1)
-                fcst_weights = F.softmax(fcst_weights, dim=1)
-                fcst_repr = torch.sum(f_enc * fcst_weights, dim=1)  # (B, d_model)
-            else:
-                raise ValueError(f"Unknown pooling type: {self.pooling_type}")
-            
-            # 融合历史和预测表示
-            global_repr = torch.cat([hist_repr, fcst_repr], dim=-1)  # (B, 2*d_model)
+            # 恢复原始设计：拼接完整序列，然后进行池化
+            # 这样既保留了序列信息，又利用了预测信息
+            combined = torch.cat([h_enc, f_enc], dim=1)  # (B, past_hours + future_hours, d_model)
         else:
-            # 只有历史信息时，使用原始池化方法
-            if self.pooling_type == 'last':
-                global_repr = h_enc[:, -1, :]  # (B, d_model)
-            elif self.pooling_type == 'mean':
-                global_repr = torch.mean(h_enc, dim=1)  # (B, d_model)
-            elif self.pooling_type == 'max':
-                global_repr = torch.max(h_enc, dim=1)[0]  # (B, d_model)
-            elif self.pooling_type == 'attention':
-                global_repr = self.attention_pool(h_enc)  # (B, d_model)
-            elif self.pooling_type == 'learned_attention':
-                attention_weights = self.learned_attention(h_enc)  # (B, seq_len, 1)
-                attention_weights = F.softmax(attention_weights, dim=1)  # 归一化
-                global_repr = torch.sum(h_enc * attention_weights, dim=1)  # (B, d_model)
-            else:
-                raise ValueError(f"Unknown pooling type: {self.pooling_type}")
+            combined = h_enc
 
-        # 调整输出头以适应不同的输入维度
-        if self.cfg.get('use_forecast', False) and fcst is not None and self.fcst_proj is not None:
-            # 有预测信息时，输入维度是2*d_model
-            if not hasattr(self, 'output_head_with_forecast'):
-                self.output_head_with_forecast = nn.Sequential(
-                    nn.Linear(2 * self.cfg['d_model'], self.cfg['hidden_dim']),
-                    nn.ReLU(),
-                    nn.Dropout(self.cfg['dropout']),
-                    nn.Linear(self.cfg['hidden_dim'], self.cfg['future_hours']),
-                    nn.Sigmoid()
-                )
-                # 确保新创建的层在正确的设备上
-                self.output_head_with_forecast = self.output_head_with_forecast.to(global_repr.device)
-                # 将新层注册为模型参数
-                self.add_module('output_head_with_forecast', self.output_head_with_forecast)
-            result = self.output_head_with_forecast(global_repr)  # (B, future_hours)
+        # 改进的全局表示提取
+        if self.pooling_type == 'last':
+            # 使用最后时间步（原始方法）
+            global_repr = combined[:, -1, :]  # (B, d_model)
+        elif self.pooling_type == 'mean':
+            # 平均池化
+            global_repr = torch.mean(combined, dim=1)  # (B, d_model)
+        elif self.pooling_type == 'max':
+            # 最大池化
+            global_repr = torch.max(combined, dim=1)[0]  # (B, d_model)
+        elif self.pooling_type == 'attention':
+            # 注意力池化
+            global_repr = self.attention_pool(combined)  # (B, d_model)
+        elif self.pooling_type == 'learned_attention':
+            # 学习到的注意力权重
+            attention_weights = self.learned_attention(combined)  # (B, seq_len, 1)
+            attention_weights = F.softmax(attention_weights, dim=1)  # 归一化
+            global_repr = torch.sum(combined * attention_weights, dim=1)  # (B, d_model)
         else:
-            # 没有预测信息时，使用原始输出头
-            result = self.output_head(global_repr)   # (B, future_hours)
+            raise ValueError(f"Unknown pooling type: {self.pooling_type}")
+
+        # 预测
+        result = self.output_head(global_repr)   # (B, future_hours)
         
         return result * 100  # 乘以100转换为百分比
 
