@@ -193,8 +193,9 @@ class ImprovedTransformer(nn.Module):
                     nn.Sigmoid()
                 )
                 # 确保新创建的层在正确的设备上
-                if hasattr(self, 'output_head_with_forecast'):
-                    self.output_head_with_forecast = self.output_head_with_forecast.to(global_repr.device)
+                self.output_head_with_forecast = self.output_head_with_forecast.to(global_repr.device)
+                # 将新层注册为模型参数
+                self.add_module('output_head_with_forecast', self.output_head_with_forecast)
             result = self.output_head_with_forecast(global_repr)  # (B, future_hours)
         else:
             # 没有预测信息时，使用原始输出头

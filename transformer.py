@@ -95,8 +95,9 @@ class Transformer(nn.Module):
                     nn.Sigmoid()
                 )
                 # 确保新创建的层在正确的设备上
-                if hasattr(self, 'head_with_forecast'):
-                    self.head_with_forecast = self.head_with_forecast.to(combined.device)
+                self.head_with_forecast = self.head_with_forecast.to(combined.device)
+                # 将新层注册为模型参数
+                self.add_module('head_with_forecast', self.head_with_forecast)
             result = self.head_with_forecast(combined)  # (B, future_hours)
         else:
             # 没有预测信息时，使用原始输出头
